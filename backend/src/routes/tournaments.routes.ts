@@ -7,6 +7,8 @@ import {
   updateTournament,
   deleteTournament,
 } from "../controllers/tournaments.controller";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { requireRole } from "../middlewares/role.middleware";
 import { validateBody } from "../middlewares/validate";
 import {
   createTournamentSchema,
@@ -16,10 +18,21 @@ import {
 
 const router = Router();
 
+// Publicas: cualquiera puede consultar
 router.query!("/", validateBody(listTournamentsSchema), listTournaments);
 router.get("/:id", getTournamentById);
-router.post("/", validateBody(createTournamentSchema), createTournament);
-router.put("/:id", validateBody(updateTournamentSchema), updateTournament);
-router.delete("/:id", deleteTournament);
+
+// Privada: solo usuarios autenticados (cualquier rol)
+router.post("/", authMiddleware, validateBody(createTournamentSchema), createTournament);
+
+// Privadas protegidas por rol: solo ADMIN
+router.put(
+  "/:id",
+  authMiddleware,
+  requireRole("ADMIN"),
+  validateBody(updateTournamentSchema),
+  updateTournament
+);
+router.delete("/:id", authMiddleware, requireRole("ADMIN"), deleteTournament);
 
 export default router;

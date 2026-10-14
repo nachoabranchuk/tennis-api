@@ -1,8 +1,10 @@
 // Carga datos de ejemplo para probar la API: npm run seed
 // Ojo: borra las colecciones players y tournaments antes de insertar.
 import "dotenv/config";
+import bcrypt from "bcrypt";
 import Player from "./models/Player";
 import Tournament from "./models/Tournament";
+import User from "./models/User";
 import { connectMongoDB, disconnectMongoDB } from "./config/db";
 import { createPlayerSchema } from "./schemas/player.schema";
 import { createTournamentSchema } from "./schemas/tournament.schema";
@@ -84,6 +86,24 @@ async function seed(): Promise<void> {
   await Tournament.insertMany(validTournaments);
 
   console.log(`[seed] ${validPlayers.length} players, ${validTournaments.length} tournaments`);
+
+  // Usuario ADMIN para probar las rutas protegidas por rol. La API no permite elegir el rol al
+  // registrarse (todos entran como USER), asi que el admin se crea aca. Se puede cambiar por .env.
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL || "admin@tennis.com").toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Admin1234";
+
+  await User.findOneAndUpdate(
+    { email: adminEmail },
+    {
+      name: "Admin",
+      email: adminEmail,
+      password: await bcrypt.hash(adminPassword, 10),
+      role: "ADMIN",
+    },
+    { upsert: true, runValidators: true }
+  );
+
+  console.log(`[seed] admin user ready: ${adminEmail}`);
 }
 
 seed()
