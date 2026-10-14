@@ -10,7 +10,15 @@ const PORT: number = Number(process.env.PORT) || 3000;
 type Environment = "development" | "test" | "production";
 const NODE_ENV: Environment = (process.env.NODE_ENV as Environment) ?? "development";
 
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:5173", credentials: true }));
+// QUERY no esta en la lista por defecto de metodos permitidos por cors: hay que declararlo
+// para que el navegador pueda hacer los listados cuando front y back estan en origenes distintos.
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "QUERY", "OPTIONS"],
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
